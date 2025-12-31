@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
 const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1).optional(),
@@ -11,11 +13,11 @@ const envSchema = z
     GEMINI_API_KEY: z.string().optional(),
     NEXTAUTH_SECRET: z.string().min(1),
     NEXTAUTH_URL: z.string().optional(),
-    SMTP_HOST: z.string().min(1),
-    SMTP_PORT: z.coerce.number().min(1),
-    SMTP_USER: z.string().min(1),
-    SMTP_PASS: z.string().min(1),
-    MAIL_FROM: z.string().min(1),
+    SMTP_HOST: z.string().optional().transform((v) => v ?? "localhost"),
+    SMTP_PORT: z.coerce.number().optional().transform((v) => v ?? 1025),
+    SMTP_USER: z.string().optional().transform((v) => v ?? "user"),
+    SMTP_PASS: z.string().optional().transform((v) => v ?? "pass"),
+    MAIL_FROM: z.string().optional().transform((v) => v ?? "no-reply@example.com"),
     REDIS_URL: z.string().optional(),
   })
   .refine(
@@ -26,7 +28,21 @@ const envSchema = z
       message:
         "Provide DATABASE_URL or DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD/DB_DATABASE to build it.",
     },
-  );
+  )
+  .superRefine((_, ctx) => {
+    const enforceSmtp = process.env.ENFORCE_SMTP_ENV === "true";
+    if (isBuildPhase || !enforceSmtp) return;
+    const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"] as const;
+    required.forEach((key) => {
+      if (!process.env[key]) {
+        ctx.addIssue({
+          code: "custom",
+          path: [key],
+          message: `Missing required environment variable ${key}`,
+        });
+      }
+    });
+  });
 
 function buildDatabaseUrl(parsed: z.infer<typeof envSchema>) {
   if (parsed.DATABASE_URL) return parsed.DATABASE_URL;
