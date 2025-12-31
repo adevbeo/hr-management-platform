@@ -3,22 +3,38 @@
 import { FormEvent, Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 
 function SignInForm() {
   const params = useSearchParams();
   const [email, setEmail] = useState("admin@demo.com");
   const [password, setPassword] = useState("Admin123!");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    const result = await signIn("credentials", { email, password, redirect: false, callbackUrl });
-    if (result?.error) {
-      setError("Sai tài khoản hoặc mật khẩu");
-    } else {
-      window.location.href = callbackUrl;
+    setLoading(true);
+    const toastId = toast.loading("Đang đăng nhập...");
+
+    try {
+      const result = await signIn("credentials", { email, password, redirect: false, callbackUrl });
+      if (result?.error) {
+        const message = "Sai tài khoản hoặc mật khẩu";
+        setError(message);
+        toast.error(message, { id: toastId });
+      } else {
+        toast.success("Đăng nhập thành công", { id: toastId });
+        window.location.href = callbackUrl;
+      }
+    } catch {
+      const message = "Đăng nhập thất bại. Vui lòng thử lại";
+      toast.error(message, { id: toastId });
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,7 +48,7 @@ function SignInForm() {
         <div className="mt-3 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
           <div className="font-semibold text-slate-900">Hướng dẫn nhanh</div>
           <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>Admin: xem/thiết lập phân quyền, nhân sự, hợp đồng, báo cáo.</li>
+            <li>Admin: xem/thiet lập phân quyền, nhân sự, hợp đồng, báo cáo.</li>
             <li>HR: quản lý nhân sự, hợp đồng, báo cáo, lịch gửi.</li>
             <li>Quản lý: xem nhân sự trong phòng ban và báo cáo liên quan.</li>
           </ul>
@@ -43,6 +59,7 @@ function SignInForm() {
             <input
               className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
               type="email"
+              disabled={loading}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -53,6 +70,7 @@ function SignInForm() {
             <input
               className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
               type="password"
+              disabled={loading}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -61,9 +79,10 @@ function SignInForm() {
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+            disabled={loading}
+            className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Đăng nhập
+            {loading ? "Đang xử lý..." : "Đăng nhập"}
           </button>
         </form>
         <p className="mt-4 text-xs text-slate-500">
