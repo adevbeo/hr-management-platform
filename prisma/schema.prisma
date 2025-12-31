@@ -48,6 +48,12 @@ enum ReportFormat {
   EXCEL
 }
 
+enum WorkReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id            String        @id @default(cuid())
   email         String        @unique
@@ -60,6 +66,8 @@ model User {
   sessions      Session[]
   auditLogs     AuditLog[]    @relation("AuditUser")
   employeeHistories EmployeeHistory[] @relation("EmployeeHistoryUser")
+  submittedWorkReports WorkReport[] @relation("WorkReportSubmitter")
+  reviewedWorkReports  WorkReport[] @relation("WorkReportReviewer")
   contractTemplates ContractTemplate[] @relation("TemplateCreatedBy")
   contractGenerationLogs ContractGenerationLog[] @relation("ContractGenerationCreator")
   reportTemplates ReportTemplate[] @relation("ReportTemplateCreator")
@@ -167,6 +175,7 @@ model Employee {
   reports     Employee[]  @relation("EmployeeManager")
   contracts   Contract[]
   histories   EmployeeHistory[]
+  workReports WorkReport[]
   generationLogs ContractGenerationLog[] @relation("ContractGenerationEmployee")
 }
 
@@ -174,8 +183,8 @@ model EmployeeHistory {
   id         String   @id @default(cuid())
   employeeId String
   field      String
-  oldValue   String?
-  newValue   String?
+  oldValue   String?  @db.Text
+  newValue   String?  @db.Text
   userId     String?
   timestamp  DateTime @default(now())
 
@@ -308,6 +317,26 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   user User? @relation("AuditUser", fields: [userId], references: [id])
+}
+
+model WorkReport {
+  id           String            @id @default(cuid())
+  employeeId   String
+  submitterId  String?
+  reviewerId   String?
+  date         DateTime
+  content      String            @db.LongText
+  status       WorkReportStatus  @default(PENDING)
+  reviewNote   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime          @default(now())
+
+  employee     Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  submitter    User?             @relation("WorkReportSubmitter", fields: [submitterId], references: [id])
+  reviewer     User?             @relation("WorkReportReviewer", fields: [reviewerId], references: [id])
+
+  @@index([employeeId, date])
+  @@index([status])
 }
 
 // NextAuth.js models

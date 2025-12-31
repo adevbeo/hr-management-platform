@@ -1,6 +1,15 @@
 import { EmployeeStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/client";
 
+function safeStringify(value: any, max = 1000) {
+  try {
+    const s = JSON.stringify(value);
+    return s.length > max ? s.slice(0, max) : s;
+  } catch (e) {
+    return String(value).slice(0, max);
+  }
+}
+
 export async function listEmployees() {
   return prisma.employee.findMany({
     include: { department: true, position: true, manager: true },
@@ -25,7 +34,7 @@ export async function createEmployee(
     data: {
       employeeId: employee.id,
       field: "created",
-      newValue: JSON.stringify(input),
+      newValue: safeStringify(input),
       userId,
     },
   });
@@ -49,8 +58,8 @@ export async function updateEmployee(
       data: {
         employeeId: employee.id,
         field: "updated",
-        oldValue: JSON.stringify(before),
-        newValue: JSON.stringify(input),
+        oldValue: safeStringify(before),
+        newValue: safeStringify(input),
         userId,
       },
     });
@@ -66,7 +75,7 @@ export async function deleteEmployee(id: string, userId?: string) {
     data: {
       employeeId: id,
       field: "deleted",
-      oldValue: JSON.stringify(employee),
+      oldValue: safeStringify(employee),
       userId,
     },
   });

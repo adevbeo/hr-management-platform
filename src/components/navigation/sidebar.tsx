@@ -30,7 +30,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
   return (
     <aside className="w-64 shrink-0 border-r border-slate-200 bg-white/80 backdrop-blur-md">
       <div className="px-4 py-5">
-        <div className="text-lg font-semibold text-slate-900">Nền tảng HR</div>
+        <div className="text-lg font-semibold text-slate-900">HR Management Platform</div>
         <p className="text-sm text-slate-500">Quản trị & tự động hóa</p>
       </div>
       <nav className="space-y-1 px-3 pb-6">

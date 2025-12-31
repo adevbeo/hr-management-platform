@@ -36,6 +36,17 @@ const permissions: PermissionSeed[] = [
   { module: "reports", action: "export", description: "Export reports" },
   { module: "admin", action: "rbac", description: "Manage roles and permissions" },
   { module: "admin", action: "users", description: "Manage users" },
+  { module: "departments", action: "view", description: "View departments" },
+  { module: "departments", action: "create", description: "Create departments" },
+  { module: "departments", action: "edit", description: "Edit departments" },
+  { module: "departments", action: "delete", description: "Delete departments" },
+  { module: "positions", action: "view", description: "View positions" },
+  { module: "positions", action: "create", description: "Create positions" },
+  { module: "positions", action: "edit", description: "Edit positions" },
+  { module: "positions", action: "delete", description: "Delete positions" },
+  { module: "workreports", action: "view", description: "View work reports" },
+  { module: "workreports", action: "submit", description: "Submit work reports" },
+  { module: "workreports", action: "review", description: "Review/approve work reports" },
   { module: "automations", action: "ai", description: "Use AI automations" },
   { module: "scheduler", action: "manage", description: "Manage scheduled reports" },
 ];
@@ -538,6 +549,14 @@ async function main() {
       "employees:view",
       "employees:create",
       "employees:edit",
+      "departments:view",
+      "departments:create",
+      "departments:edit",
+      "departments:delete",
+      "positions:view",
+      "positions:create",
+      "positions:edit",
+      "positions:delete",
       "contracts:view",
       "contracts:create",
       "contracts:edit",
@@ -547,6 +566,8 @@ async function main() {
       "reports:create",
       "reports:run",
       "reports:export",
+      "workreports:view",
+      "workreports:review",
       "automations:ai",
       "scheduler:manage",
     ],
@@ -565,8 +586,18 @@ async function main() {
       "contracts:generate",
       "reports:view",
       "reports:run",
+      "workreports:view",
+      "workreports:review",
     ],
     PermissionScope.DEPARTMENT,
+    permissionMap,
+  );
+
+  await seedRole(
+    "EMPLOYEE",
+    "Employee self-service access",
+    ["workreports:submit", "workreports:view"],
+    PermissionScope.SELF,
     permissionMap,
   );
 
@@ -578,6 +609,7 @@ async function main() {
   await seedUser("admin@demo.com", "Admin123!", "Admin User", ["ADMIN"]);
   await seedUser("hr@demo.com", "Hr123!", "HR User", ["HR"]);
   await seedUser("manager@demo.com", "Manager123!", "Manager User", ["MANAGER"]);
+  await seedUser("employee@demo.com", "Employee123!", "Employee User", ["EMPLOYEE"]);
 
   console.log("Seeding complete ✅");
 }

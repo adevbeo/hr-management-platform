@@ -9,7 +9,15 @@ export async function requirePagePermission(permission?: string) {
   if (permission) {
     const perms = (session.user as any).permissions ?? [];
     if (!perms.includes(permission)) {
-      redirect("/dashboard");
+      const fallback =
+        perms.includes("workreports:view")
+          ? "/reports/daily"
+          : perms.includes("employees:view")
+            ? "/employees"
+            : perms.includes("dashboard:view")
+              ? "/dashboard"
+              : "/auth/signin";
+      redirect(fallback);
     }
   }
 

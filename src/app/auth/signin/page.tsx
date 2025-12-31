@@ -41,23 +41,15 @@ function SignInForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-lg">
-        <h1 className="text-2xl font-semibold text-slate-900">Nền tảng Quản lý Nhân sự</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl text-center font-semibold text-slate-900">HR Management Platform</h1>
+        <p className="mt-1 text-xs text-slate-500 mt-2 text-center">
           Đăng nhập để quản lý nhân sự, hợp đồng, báo cáo và tự động hóa.
         </p>
-        <div className="mt-3 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
-          <div className="font-semibold text-slate-900">Hướng dẫn nhanh</div>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>Admin: xem/thiet lập phân quyền, nhân sự, hợp đồng, báo cáo.</li>
-            <li>HR: quản lý nhân sự, hợp đồng, báo cáo, lịch gửi.</li>
-            <li>Quản lý: xem nhân sự trong phòng ban và báo cáo liên quan.</li>
-          </ul>
-        </div>
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div>
             <label className="text-sm font-medium text-slate-700">Email</label>
             <input
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-black placeholder:text-black placeholder:font-semibold focus:border-slate-500 focus:outline-none"
               type="email"
               disabled={loading}
               value={email}
@@ -68,7 +60,7 @@ function SignInForm() {
           <div>
             <label className="text-sm font-medium text-slate-700">Mật khẩu</label>
             <input
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-black placeholder:text-black placeholder:font-semibold focus:border-slate-500 focus:outline-none"
               type="password"
               disabled={loading}
               value={password}
@@ -85,8 +77,8 @@ function SignInForm() {
             {loading ? "Đang xử lý..." : "Đăng nhập"}
           </button>
         </form>
-        <p className="mt-4 text-xs text-slate-500">
-          Tài khoản mẫu: admin@demo.com / Admin123!, hr@demo.com / Hr123!, manager@demo.com / Manager123!
+        <p className="mt-4 text-xs text-center text-slate-500">
+          Sản phẩm thuộc về phòng ESD - HPT
         </p>
       </div>
     </div>
