@@ -1,0 +1,347 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PermissionScope {
+  SELF
+  DEPARTMENT
+  ALL
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ONBOARDING
+  TERMINATED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+enum ContractType {
+  FULL_TIME
+  PART_TIME
+  CONTRACTOR
+  INTERN
+  OTHER
+}
+
+enum CostType {
+  PAYROLL
+  EXPENSE
+  BONUS
+  BENEFIT
+  OTHER
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String?
+  passwordHash  String
+  departmentId  String?
+  department    Department?   @relation(fields: [departmentId], references: [id])
+  roles         UserRole[]
+  accounts      Account[]
+  sessions      Session[]
+  auditLogs     AuditLog[]    @relation("AuditUser")
+  employeeHistories EmployeeHistory[] @relation("EmployeeHistoryUser")
+  contractTemplates ContractTemplate[] @relation("TemplateCreatedBy")
+  contractGenerationLogs ContractGenerationLog[] @relation("ContractGenerationCreator")
+  reportTemplates ReportTemplate[] @relation("ReportTemplateCreator")
+  reportRuns     ReportRun[]  @relation("ReportRunUser")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Role {
+  id             String            @id @default(cuid())
+  name           String            @unique
+  description    String?
+  permissions    RolePermission[]
+  userRoles      UserRole[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model Permission {
+  id             String            @id @default(cuid())
+  module         String
+  action         String
+  description    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  rolePermissions RolePermission[]
+
+  @@unique([module, action])
+  @@index([module])
+}
+
+model RolePermission {
+  id            String           @id @default(cuid())
+  roleId        String
+  permissionId  String
+  scope         PermissionScope  @default(ALL)
+  departmentId  String?
+  employeeId    String?
+  createdAt     DateTime         @default(now())
+
+  role        Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission  Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRole {
+  id            String           @id @default(cuid())
+  userId        String
+  roleId        String
+  scope         PermissionScope  @default(ALL)
+  departmentId  String?
+  createdAt     DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model Department {
+  id          String      @id @default(cuid())
+  name        String
+  code        String      @unique
+  description String?
+  employees   Employee[]
+  positions   Position[]
+  users       User[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([name])
+}
+
+model Position {
+  id            String      @id @default(cuid())
+  title         String      @unique
+  description   String?
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+  employees     Employee[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Employee {
+  id            String           @id @default(cuid())
+  employeeCode  String           @unique
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String?
+  status        EmployeeStatus   @default(ACTIVE)
+  startDate     DateTime
+  endDate       DateTime?
+  departmentId  String?
+  positionId    String?
+  managerId     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  department  Department? @relation(fields: [departmentId], references: [id])
+  position    Position?   @relation(fields: [positionId], references: [id])
+  manager     Employee?   @relation("EmployeeManager", fields: [managerId], references: [id])
+  reports     Employee[]  @relation("EmployeeManager")
+  contracts   Contract[]
+  histories   EmployeeHistory[]
+  generationLogs ContractGenerationLog[] @relation("ContractGenerationEmployee")
+}
+
+model EmployeeHistory {
+  id         String   @id @default(cuid())
+  employeeId String
+  field      String
+  oldValue   String?
+  newValue   String?
+  userId     String?
+  timestamp  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  user     User?    @relation("EmployeeHistoryUser", fields: [userId], references: [id])
+
+  @@index([employeeId])
+}
+
+model ContractTemplate {
+  id           String                  @id @default(cuid())
+  name         String                  @unique
+  type         String
+  content      String                  @db.LongText
+  mergeFields  Json
+  aiPrompt     String?
+  createdById  String?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  createdBy   User?                 @relation("TemplateCreatedBy", fields: [createdById], references: [id])
+  contracts   Contract[]
+  generationLogs ContractGenerationLog[]
+}
+
+model Contract {
+  id               String         @id @default(cuid())
+  employeeId       String
+  templateId       String?
+  type             ContractType   @default(FULL_TIME)
+  startDate        DateTime
+  endDate          DateTime?
+  status           ContractStatus @default(DRAFT)
+  generatedContent String?        @db.LongText
+  version          Int            @default(1)
+  pdfUrl           String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  employee Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  template ContractTemplate? @relation(fields: [templateId], references: [id])
+  costs    ContractCost[]
+}
+
+model ContractCost {
+  id           String    @id @default(cuid())
+  contractId   String
+  costType     CostType
+  amount       Decimal   @db.Decimal(12, 2)
+  currency     String    @default("USD")
+  note         String?
+  effectiveDate DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([effectiveDate])
+}
+
+model ContractGenerationLog {
+  id          String    @id @default(cuid())
+  templateId  String?
+  employeeId  String?
+  createdById String?
+  params      Json?
+  output      String?   @db.LongText
+  createdAt   DateTime  @default(now())
+
+  template   ContractTemplate? @relation(fields: [templateId], references: [id])
+  employee   Employee?         @relation("ContractGenerationEmployee", fields: [employeeId], references: [id])
+  createdBy  User?             @relation("ContractGenerationCreator", fields: [createdById], references: [id])
+}
+
+model ReportTemplate {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  jsonSchema      Json
+  queryDefinition Json
+  outputLayout    Json
+  createdById     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  createdBy       User?            @relation("ReportTemplateCreator", fields: [createdById], references: [id])
+  reportRuns      ReportRun[]
+  scheduledReports ScheduledReport[]
+}
+
+model ReportRun {
+  id               String        @id @default(cuid())
+  templateId       String
+  runById          String?
+  params           Json
+  generatedFileUrl String?
+  generatedAt      DateTime      @default(now())
+  insights         Json?
+  format           ReportFormat
+  status           String        @default("COMPLETED")
+  data             Json?
+
+  template ReportTemplate @relation(fields: [templateId], references: [id])
+  runBy    User?          @relation("ReportRunUser", fields: [runById], references: [id])
+
+  @@index([templateId])
+}
+
+model ScheduledReport {
+  id          String   @id @default(cuid())
+  templateId  String
+  scheduleCron String
+  recipients  Json
+  filters     Json?
+  active      Boolean  @default(true)
+  lastRunAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  template ReportTemplate @relation(fields: [templateId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  entity    String
+  entityId  String
+  action    String
+  changes   Json?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  user User? @relation("AuditUser", fields: [userId], references: [id])
+}
+
+// NextAuth.js models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.LongText
+  access_token      String? @db.LongText
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.LongText
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
