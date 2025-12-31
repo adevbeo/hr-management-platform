@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth/options";
@@ -19,9 +19,11 @@ const updateSchema = z.object({
 });
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } },
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
+  const params = await context.params;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -33,9 +35,11 @@ export async function GET(
 }
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } },
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
+  const params = await context.params;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -75,9 +79,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } },
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
+  const params = await context.params;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

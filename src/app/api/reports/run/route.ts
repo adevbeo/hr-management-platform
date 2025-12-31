@@ -7,7 +7,7 @@ import { runReport } from "@/server/services/reportService";
 
 const schema = z.object({
   templateId: z.string(),
-  params: z.record(z.any()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(req: Request) {

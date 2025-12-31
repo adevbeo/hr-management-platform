@@ -174,7 +174,20 @@ async function seedEmployees() {
     positionMap[pos.title] = pos.id;
   });
 
-  const seedEmployees = [
+  type SeedEmployee = {
+    employeeCode: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    departmentId?: string | null;
+    positionId?: string | null;
+    status: EmployeeStatus;
+    startDate: Date;
+    endDate?: Date | null;
+    managerCode?: string;
+  };
+
+  const seedEmployees: SeedEmployee[] = [
     {
       employeeCode: "EMP-001",
       firstName: "Alice",
@@ -281,9 +294,9 @@ async function seedEmployees() {
   ];
 
   for (const emp of seedEmployees) {
-    const manager =
-      emp.managerCode &&
-      (await prisma.employee.findUnique({ where: { employeeCode: emp.managerCode } }));
+    const manager = emp.managerCode
+      ? await prisma.employee.findUnique({ where: { employeeCode: emp.managerCode } })
+      : null;
 
     await prisma.employee.upsert({
       where: { employeeCode: emp.employeeCode },

@@ -10,7 +10,7 @@ const schema = z.object({
   templateId: z.string(),
   scheduleCron: z.string(),
   recipients: z.array(z.string()),
-  filters: z.record(z.any()).optional(),
+  filters: z.record(z.string(), z.any()).optional(),
   active: z.boolean().default(true),
 });
 

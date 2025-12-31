@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth/options";
@@ -14,24 +15,22 @@ const schema = z.object({
 });
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } },
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
+  const params = await context.params;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await requirePermission(session.user.id, "contracts:costs");
 
   const parsed = schema.parse(await req.json());
   const cost = await addContractCost(params.id, {
-    id: "",
-    contractId: params.id,
     costType: parsed.costType as any,
-    amount: parsed.amount,
+    amount: new Prisma.Decimal(parsed.amount),
     currency: parsed.currency,
-    note: parsed.note,
+    note: parsed.note ?? null,
     effectiveDate: new Date(parsed.effectiveDate),
-    createdAt: new Date(),
-    updatedAt: new Date(),
   });
 
   return NextResponse.json(cost, { status: 201 });

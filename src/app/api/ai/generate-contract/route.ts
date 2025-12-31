@@ -8,7 +8,7 @@ import { generateContractWithAI } from "@/server/services/aiService";
 const schema = z.object({
   templateId: z.string(),
   employeeId: z.string(),
-  extraParams: z.record(z.any()).optional(),
+  extraParams: z.record(z.string(), z.any()).optional(),
 });
 
 export async function POST(req: Request) {
